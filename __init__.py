@@ -1,28 +1,20 @@
-# ##### BEGIN GPL LICENSE BLOCK #####{{{1
-#
-#  This program is free software; you can redistribute it and/or
-#  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
-#  of the License, or (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software Foundation,
-#  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110 - 1301, USA.
-#
-# ##### END GPL LICENSE BLOCK #####}}}1
-bl_info = { # {{{1
+bl_info = {
         "name": "Node Position Adjust",
         "author":"dustractor",
         "version":(1,0),
+        "blender":(2,80,0),
         "location":"hotkeys ctrl+alt+shift+(a,z,x,s)",
-        "category":"Node Editor" } #}}}
+        "category":"Node Editor" }
 import bpy
-# {{{1 node iterator functions
+print("OK")
+
+def _(f=None,r=[]):
+    if f:
+        r.append(f)
+        return f
+    else:
+        return r
+
 def directly_upstream(node):
     for p in node.inputs:
         if p.is_linked:
@@ -33,7 +25,7 @@ def selected_nodes(context):
         if n.select:
             yield n
 
-# {{{1 select_upstrm_deselect_this op
+@_
 class NODEADJ_OT_select_upstrm_deselect_this(bpy.types.Operator):
     bl_idname = "nodeadj.node_sudt"
     bl_label = "select upstream nodes / deselect this one"
@@ -61,16 +53,16 @@ class NODEADJ_OT_select_upstrm_deselect_this(bpy.types.Operator):
         return {"FINISHED"}
 
 
-# {{{1 align op
+@_
 class NODEADJ_OT_node_align(bpy.types.Operator):
     bl_idname = "nodeadj.node_align"
     bl_label = "nadj:node align"
     bl_options = {"REGISTER","UNDO","INTERNAL"}
 
-    align = bpy.props.EnumProperty(
+    align: bpy.props.EnumProperty(
             items=[(_,_,_) for _ in ( "top","middle","bottom")],
             default="middle")
-    pad = bpy.props.IntProperty(default=80)
+    pad: bpy.props.IntProperty(default=80)
 
     @classmethod
     def poll(cls,context):
@@ -109,7 +101,6 @@ class NODEADJ_OT_node_align(bpy.types.Operator):
         return {"FINISHED"}
 
 
-# {{{1 hotkey aux. data
 modtrans = { "C":"ctrl", "A":"alt", "S":"shift", "O":"oskey"}
 
 addon_keymaps = []
@@ -118,29 +109,28 @@ map_ops = (
         ("nodeadj.node_align","A+CAS",{"align":"top"}),
         ("nodeadj.node_align","Z+CAS",{"align":"middle"}),
         ("nodeadj.node_align","X+CAS",{"align":"bottom"}),
-        ("nodeadj.node_sudt","S+CAS",{}))
+        ("nodeadj.node_sudt","S+CAS",{})
+    )
 
-
-# {{{1 reg/dereg
 def register():
-    bpy.utils.register_module(__package__)
+    print(">>>")
+    
+    list(map(bpy.utils.register_class,_()))
     addon_keymaps.clear()
-    kc = bpy.context.window_manager.keyconfigs.addon
-    if kc:
-        km = kc.keymaps.new(name="Node Editor", space_type="NODE_EDITOR")
-        for bl_idname,mapdata,propdata in map_ops:
-            keytype,modstr = mapdata.split("+")
-            kmi = km.keymap_items.new(
-                    bl_idname, keytype, "PRESS",
-                    **{modtrans[s]:True for s in modstr})
-            for prop,value in propdata.items():
-                setattr(kmi.properties, prop, value)
-            addon_keymaps.append((km,kmi))
+    km = bpy.context.window_manager.keyconfigs.addon.keymaps.new(
+            name="Node Editor", space_type="NODE_EDITOR")
+    for bl_idname,mapdata,propdata in map_ops:
+        keytype,modstr = mapdata.split("+")
+        kmi = km.keymap_items.new(
+                bl_idname, keytype, "PRESS",
+                **{modtrans[s]:True for s in modstr})
+        for prop,value in propdata.items():
+            setattr(kmi.properties, prop, value)
+        addon_keymaps.append((km,kmi))
 
 def unregister():
-    kc = bpy.context.window_manager.keyconfigs.addon
     for km,kmi in addon_keymaps:
         km.remove(kmi)
     addon_keymaps.clear()
-    bpy.utils.unregister_module(__package__)
+    list(map(bpy.utils.unregister_class,_()))
 
