@@ -6,7 +6,6 @@ bl_info = {
         "location":"hotkeys ctrl+alt+shift+(a,z,x,s)",
         "category":"Node Editor" }
 import bpy
-print("OK")
 
 def _(f=None,r=[]):
     if f:
@@ -113,8 +112,6 @@ map_ops = (
     )
 
 def register():
-    print(">>>")
-    
     list(map(bpy.utils.register_class,_()))
     addon_keymaps.clear()
     km = bpy.context.window_manager.keyconfigs.addon.keymaps.new(
@@ -130,7 +127,7 @@ def register():
 
 def unregister():
     for km,kmi in addon_keymaps:
-        km.remove(kmi)
+        km.keymap_items.remove(kmi)
     addon_keymaps.clear()
     list(map(bpy.utils.unregister_class,_()))
 
